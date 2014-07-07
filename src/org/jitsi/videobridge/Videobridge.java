@@ -16,6 +16,7 @@ import net.java.sip.communicator.util.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
 import org.jitsi.service.configuration.*;
+import org.jitsi.service.neomedia.*;
 import org.jitsi.util.Logger;
 import org.jitsi.videobridge.xmpp.*;
 import org.jivesoftware.smack.provider.*;
@@ -513,6 +514,24 @@ public class Videobridge
                 }
             }
 
+            // Get the RTCP termination strategy.
+            ColibriConferenceIQ.RTCPTerminationStrategy
+                    strategyIQ = conferenceIQ.getRTCPTerminationStrategy();
+
+            RTCPTerminationStrategy strategy = null;
+            if (strategyIQ != null)
+            {
+                try
+                {
+                    Class<?> clazz = Class.forName(strategyIQ.getName());
+                    strategy = (RTCPTerminationStrategy) clazz.newInstance();
+                }
+                catch (Exception e)
+                {
+                    // TODO handle the exception.
+                }
+            }
+
             for (ColibriConferenceIQ.Content contentIQ
                     : conferenceIQ.getContents())
             {
@@ -530,6 +549,16 @@ public class Videobridge
                 }
                 else
                 {
+                    // Set the RTCP termination strategy.
+                    if (strategy != null)
+                    {
+                        RTPTranslator rtpTranslator = content
+                                .getRTPTranslator();
+
+                        if (rtpTranslator != null)
+                            rtpTranslator.setRTCPTerminationStrategy(strategy);
+                    }
+
                     ColibriConferenceIQ.Content responseContentIQ
                         = new ColibriConferenceIQ.Content(content.getName());
 
